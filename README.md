@@ -1,69 +1,89 @@
-﻿# HR Policy Graph RAG Assistant
+# HR Policy Graph RAG Assistant
 
 ## Overview
-This project is a graph-based HR policy assistant that answers questions using real policy documents and retrieval-augmented generation (RAG). It uses a small conversation workflow instead of a single fixed response.
+This project is a lightweight graph-based HR policy assistant built on top of retrieval-augmented generation (RAG). It uses real PDF policy documents as its knowledge base and answers user questions from retrieved document context only.
 
 The assistant can:
-- read multiple HR-related PDF documents
-- build a FAISS vector index from document chunks
-- retrieve relevant passages for a user question
-- answer from retrieved context only
-- ask a clarifying question when the user's request is too vague
-- route the question into one of several topic branches:
-  - leave / FMLA
-  - ADA / reasonable accommodation
-  - OSHA / worker rights
-- show a simple graph trace for debugging and demo purposes
+- read multiple HR-related policy documents
+- retrieve relevant document chunks from a FAISS index
+- answer policy questions from retrieved context
+- ask a clarifying question when the user query is too vague
+- maintain short conversation history across turns
+- use a minimal LangGraph workflow for flow control
 
-## Main Files
+## Main Idea
+The project combines:
+- **RAG** for document-grounded answers
+- **FAISS** for vector search
+- **OpenAI embeddings** for semantic retrieval
+- **ChatOpenAI** for answer generation
+- **LangGraph** for simple conversational routing
+
+The graph is intentionally minimal. It controls the flow between:
+1. clarity check
+2. optional clarification
+3. final answer generation
+
+## Project Structure
 - `build_index.py`  
-  Reads the PDF files, splits them into chunks, creates embeddings, builds a FAISS index, and saves it locally.
+  Reads the PDF files from `data/`, splits them into chunks, creates embeddings, builds a FAISS index, and saves it locally.
 
 - `hr_graph.py`  
-  Main application. Loads the saved FAISS index, handles user questions, asks clarifying questions when needed, routes by topic, retrieves relevant context, and generates answers.
+  Main application. Loads the saved FAISS index, checks whether the user question is clear enough, optionally asks a clarifying question, retrieves relevant context, and generates a final answer.
 
 - `data/`  
-  Contains the source PDF files used as the knowledge base.
+  Source PDF files used as the knowledge base.
 
 - `faiss_index/`  
-  Contains the saved FAISS index generated from the PDF documents.
+  Saved FAISS vector index generated from the source documents.
 
 - `archive/`  
-  Contains earlier experimental and testing scripts that are not required for the final demo.
+  Older experimental and intermediate scripts that are not required for the final version.
 
 ## How It Works
-1. PDF documents are stored in the `data/` folder.
-2. `build_index.py` reads the PDFs and splits them into chunks.
-3. Embeddings are created for the chunks.
-4. A FAISS index is built and saved in `faiss_index/`.
-5. `hr_graph.py` loads the saved index and starts the interactive assistant.
-6. The assistant checks whether the question is clear enough.
-7. If needed, it asks a clarifying question.
-8. If the question is clear, it routes it to the correct topic branch.
-9. It retrieves relevant chunks and answers only from the retrieved context.
+1. Policy PDFs are stored in the `data/` folder.
+2. `build_index.py` reads the files and splits them into chunks.
+3. Embeddings are generated for the chunks.
+4. A FAISS index is created and stored locally.
+5. `hr_graph.py` loads the index and starts an interactive session.
+6. The graph checks whether the user question is clear.
+7. If needed, it asks one clarifying question.
+8. If the question is clear, it retrieves relevant chunks.
+9. The model answers only from the retrieved context.
 
-## Supported Topic Branches
-- Leave / FMLA
-- ADA / reasonable accommodation
-- OSHA / workplace safety / worker rights
+## Graph Flow
+The LangGraph workflow is minimal and used only for flow control:
+
+`START -> check_clarity -> ask_question OR answer_question -> END`
+
+This keeps the architecture simple while still demonstrating graph-based orchestration.
+
+## Features
+- Multi-document RAG over real HR-related PDF files
+- Clarification loop for vague questions
+- Retrieval grounded in source documents
+- Conversation history support
+- Simple graph-based workflow
+- Source-aware prompting with file name and page number
 
 ## Example Questions
 - Can an employee take leave to care for a parent with a serious health condition?
+- How many weeks of unpaid leave can an eligible employee take under FMLA?
 - Does an employer have to provide a reasonable accommodation for an employee with a disability?
 - What are an employer's responsibilities after a federal OSHA inspection?
 - What about leave?
 
 ## Requirements
 Typical packages used in this project:
-- langchain
-- langchain-openai
-- langchain-community
-- langgraph
-- pypdf
-- faiss-cpu
+- `langchain`
+- `langchain-openai`
+- `langchain-community`
+- `langgraph`
+- `pypdf`
+- `faiss-cpu`
 
-## Running the Project
+## Setup
 
-### 1. Build the index
+### 1. Install dependencies
 ```bash
-python build_index.py
+pip install -U langchain langchain-openai langchain-community langgraph pypdf faiss-cpu
